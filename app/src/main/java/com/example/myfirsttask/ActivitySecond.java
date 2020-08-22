@@ -30,17 +30,17 @@ public class ActivitySecond extends AppCompatActivity {
 
         SQLiteDatabase database = dbHelper.getWritableDatabase();
 
-        Cursor cursor = database.query(DBHelper.TABLE_NAME, null, null, null, null, null, null);
+        Cursor cursor = database.query(DBHelper.THIS_TABLE, null, null, null, null, null, null);
 
         if (cursor.moveToFirst()) {
-            int id_Index = cursor.getColumnIndex(DBHelper.ID);
-            int email_Index = cursor.getColumnIndex(DBHelper.EMAIL);
-            int first_name_Index = cursor.getColumnIndex(DBHelper.FIRST_NAME);
-            int last_name_Index = cursor.getColumnIndex(DBHelper.LAST_NAME);
-            int avatar_Index = cursor.getColumnIndex(DBHelper.AVATAR);
-            int company_Index = cursor.getColumnIndex(DBHelper.COMPANY);
-            int url_Index = cursor.getColumnIndex(DBHelper.URL);
-            int text_Index = cursor.getColumnIndex(DBHelper.TEXT);
+            int id_Index = cursor.getColumnIndex(DBHelper.KEY_ID);
+            int email_Index = cursor.getColumnIndex(DBHelper.KEY_EMAIL);
+            int first_name_Index = cursor.getColumnIndex(DBHelper.KEY_FIRST_NAME);
+            int last_name_Index = cursor.getColumnIndex(DBHelper.KEY_LAST_NAME);
+            int avatar_Index = cursor.getColumnIndex(DBHelper.KEY_AVATAR);
+            int company_Index = cursor.getColumnIndex(DBHelper.KEY_COMPANY);
+            int url_Index = cursor.getColumnIndex(DBHelper.KEY_URL);
+            int text_Index = cursor.getColumnIndex(DBHelper.KEY_TEXT);
             String url = cursor.getString(avatar_Index);
 
             do {
@@ -65,5 +65,17 @@ public class ActivitySecond extends AppCompatActivity {
             tvText.setText(diff);
         }
         cursor.close();
+
+        // добавление кнопки "назад" в actionbar
+        assert getSupportActionBar() != null;   //null check
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);   //show back button
+    }// onCreate
+
+    // реализация метода для кнопки "назад"
+    @Override
+    public boolean onSupportNavigateUp(){
+        finish();
+        return true;
+    }// onSupportNavigateUp
     }
-}
+
