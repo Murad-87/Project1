@@ -8,18 +8,18 @@ import androidx.annotation.Nullable;
 
 public class DBHelper extends SQLiteOpenHelper {
 
-    private static final String DBNAME = "myDB";
-    private static final int VERSION_2 = 2;
+    public static final String DBNAME = "myDB";
+    public static final int VERSION_2 = 2;
 
-    private static final String TABLE_NAME = "myTable";
-    private static final String ID = "id";
-    private static final String EMAIL = "email";
-    private static final String FIRST_NAME = "first_name";
-    private static final String LAST_NAME = "last_name";
-    private static final String AVATAR = "avatar";
-    private static final String COMPANY = "company";
-    private static final String URL = "url";
-    private static final String TEXT = "text";
+    public static final String TABLE_NAME = "myTable";
+    public static final String ID = "id";
+    public static final String EMAIL = "email";
+    public static final String FIRST_NAME = "first_name";
+    public static final String LAST_NAME = "last_name";
+    public static final String AVATAR = "avatar";
+    public static final String COMPANY = "company";
+    public static final String URL = "url";
+    public static final String TEXT = "text";
 
 
     public DBHelper(@Nullable Context context) {
@@ -46,7 +46,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int i, int i1) {
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL(" drop table if exists " + TABLE_NAME);
         onCreate(db);
 
