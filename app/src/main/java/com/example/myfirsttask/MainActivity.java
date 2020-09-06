@@ -1,35 +1,41 @@
 package com.example.myfirsttask;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
+import org.jetbrains.annotations.NotNull;
+import java.io.IOException;
+import java.util.Objects;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    RequestQueue mQueue;
+    // добавляем Moshi
+    Moshi moshi;
+
 
     public static final String LOG_TAG = "myLogs";
     Button btnADD, btnRead, btnClear;
 
     DBHelper dbHelper;
+
+    // JsonAdapter обязателен. Название класса произвольное.
+    JsonAdapter<Gist> gistJsonAdapter;
 
 
 
@@ -47,68 +53,67 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnClear = findViewById(R.id.btnClear);
         btnClear.setOnClickListener(this);
 
-        mQueue = Volley.newRequestQueue(this);
 
         dbHelper = new DBHelper (this);
+
+        moshi = new Moshi.Builder().build();
+
+        gistJsonAdapter = moshi.adapter(Gist.class);
 
     }
 
     @SuppressLint("SetTextI18n")
     @Override
     public void onClick(View v) {
-        // объявляем Intent
         Intent intent;
+        // объявляем переменные OkHttp для дальнейшей работы с ними
+        OkHttpClient client = new OkHttpClient();
+        okhttp3.Request request = new Request.Builder()
+                .url("https://reqres.in/api/users/2")
+                .build();
+
         switch (v.getId()){
             case R.id.btnAdd:
-                // ссылка с которой получаем JSON object
-                String url = "https://reqres.in/api/users/2";
+                // клиент для запрос на JSON file
+                client.newCall(request).enqueue(new Callback() {
 
-                // Declaring the method to parse JSON object
-                JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-
-                                // объявляем элементы базы данных чтобы сохранить в ней распарсенный JSON object
-                                SQLiteDatabase database = dbHelper.getWritableDatabase();
-                                ContentValues contentValues = new ContentValues();
-                                try {
-                                    JSONObject data = response.getJSONObject("data");
-                                    int id = data.getInt("id");
-                                    String first_name = data.getString("first_name");
-                                    String email = data.getString("email");
-                                    String last_name = data.getString("last_name");
-                                    String avatar = data.getString("avatar");
-
-                                    JSONObject ad = response.getJSONObject("ad");
-                                    String company = ad.getString("company");
-                                    String url = ad.getString("url");
-                                    String text = ad.getString("text");
-
-                                    contentValues.put(DBHelper.KEY_ID,id);
-                                    contentValues.put(DBHelper.KEY_EMAIL,email);
-                                    contentValues.put(DBHelper.KEY_FIRST_NAME,first_name);
-                                    contentValues.put(DBHelper.KEY_LAST_NAME,last_name);
-                                    contentValues.put(DBHelper.KEY_AVATAR,avatar);
-
-                                    contentValues.put(DBHelper.KEY_COMPANY,company);
-                                    contentValues.put(DBHelper.KEY_URL,url);
-                                    contentValues.put(DBHelper.KEY_TEXT,text);
-
-                                    long rowID = database.insert(DBHelper.THIS_TABLE, null, contentValues);
-                                    Log.d(LOG_TAG, "row inserted, ID = " + rowID);
-                                    dbHelper.close();
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }// catch
-                            }// onResponse
-                        }, new Response.ErrorListener() {
+                    // если запрос на JSON file не удался
                     @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }// onErrorResponse
-                }); // Response.ErrorListener()
-                mQueue.add(request);
+                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                        // в случае неудачи вывести ошибку в Event Log
+                        e.printStackTrace();
+                    }
+
+                    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+                    @Override
+                    public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                        // объявляем элементы базы данных чтобы сохранить в ней распарсенный JSON object
+                        SQLiteDatabase database = dbHelper.getWritableDatabase();
+                        ContentValues contentValues = new ContentValues();
+                        // если запрос на JSON файл прошел успешно
+                        if (response.isSuccessful()) {
+                            // парсит JSON file
+                            final Gist gist = gistJsonAdapter.fromJson(Objects.requireNonNull(response.body()).source());
+                            assert gist != null;
+
+                            contentValues.put(DBHelper.KEY_ID, gist.data.id);
+                            contentValues.put(DBHelper.KEY_EMAIL, gist.data.email);
+                            contentValues.put(DBHelper.KEY_FIRST_NAME, gist.data.first_name);
+                            contentValues.put(DBHelper.KEY_LAST_NAME, gist.data.last_name);
+                            contentValues.put(DBHelper.KEY_AVATAR, gist.data.avatar);
+
+                            contentValues.put(DBHelper.KEY_COMPANY, gist.ad.company);
+                            contentValues.put(DBHelper.KEY_URL, gist.ad.url);
+                            contentValues.put(DBHelper.KEY_TEXT, gist.ad.text);
+
+                        }
+
+                        long rowID = database.insert(DBHelper.THIS_TABLE, null, contentValues);
+                        Log.d(LOG_TAG, "row inserted, ID = " + rowID);
+                        dbHelper.close();
+                    }
+                });
+
                 break;
 
             // открываем второе Activity
@@ -128,3 +133,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //dbHelper.close();
     } // onClick
 } // class
+
+
+
