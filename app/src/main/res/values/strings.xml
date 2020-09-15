@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">MyFirstTask</string>
-    <string name="todo">TODO</string>
-    <string name="activity_second">Activity Second</string>
-    <string name="some_text">Some text</string>
+    <string name="download">Download</string>
+    <string name="clear">Clear</string>
+    <string name="save">Save</string>
+    <string name="show">Show</string>
+    <string name="database_is_empty">Database is empty</string>
+    <string name="activity_two">Activity Two</string>
+
 </resources>
